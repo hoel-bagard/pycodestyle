@@ -51,6 +51,7 @@ import configparser
 import inspect
 import io
 import keyword
+import logging
 import os
 import re
 import sys
@@ -60,6 +61,8 @@ import warnings
 from fnmatch import fnmatch
 from functools import lru_cache
 from optparse import OptionParser
+
+from hbtools import create_logger
 
 # this is a performance hack.  see https://bugs.python.org/issue43014
 if (
@@ -541,8 +544,16 @@ def indentation(logical_line, previous_logical, indent_char,
 
 
 @register_check
-def continued_indentation(logical_line, tokens, indent_level, hang_closing,
-                          indent_char, indent_size, noqa, verbose):
+def continued_indentation(
+    logical_line: str,
+    tokens: list[tokenize.TokenInfo],
+    indent_level: int,
+    hang_closing: None,
+    indent_char: None,
+    indent_size: int,
+    noqa: list,
+    verbose: int,
+):
     r"""Continuation lines indentation.
 
     Continuation lines should align wrapped elements either vertically
@@ -569,8 +580,13 @@ def continued_indentation(logical_line, tokens, indent_level, hang_closing,
     E129: if (a or\n    b):\n    pass
     E131: a = (\n    42\n 24)
     """
+    logger = logging.getLogger("Pycodestyle Logger")
+    _tokens_str = '\n\t\t'.join([str(token) for token in tokens])
+    logger.debug(f"{logical_line=}\n\ttokens={_tokens_str}\n\t{indent_level=}\n\t{hang_closing=}\n\t{indent_char=}\n\t{indentation=}")
+
     first_row = tokens[0][2][0]
     nrows = 1 + tokens[-1][2][0] - first_row
+    logger.debug(f"{first_row=}, {nrows=}")
     if noqa or nrows == 1:
         return
 
@@ -581,8 +597,7 @@ def continued_indentation(logical_line, tokens, indent_level, hang_closing,
     indent_next = logical_line.endswith(':')
 
     row = depth = 0
-    valid_hangs = (indent_size,) if indent_char != '\t' \
-        else (indent_size, indent_size * 2)
+    valid_hangs = (indent_size,) if indent_char != '\t' else (indent_size, indent_size * 2)
     # remember how many brackets were opened on each line
     parens = [0] * nrows
     # relative indents of physical lines
@@ -2626,6 +2641,8 @@ def _parse_multi_options(options, split_token=','):
 def _main():
     """Parse options and run checks on Python source."""
     import signal
+
+    create_logger("Pycodestyle Logger", verbose_level="debug")
 
     # Handle "Broken pipe" gracefully
     try:
