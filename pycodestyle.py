@@ -617,10 +617,12 @@ def continued_indentation(
         print(">>> " + tokens[0][4].rstrip())
 
     for token_type, text, start, end, line in tokens:
+        logger.debug(f"{text=}")
 
         newline = row < start[0] - first_row
         if newline:
             row = start[0] - first_row
+            logger.debug(f"{row=}")
             newline = not last_token_multiline and token_type not in NEWLINE
 
         if newline:
@@ -747,6 +749,8 @@ def continued_indentation(
             if start[1] not in indent_chances:
                 # allow lining up tokens
                 indent_chances[start[1]] = text
+
+        logger.debug(f"{open_rows=}")
 
         last_token_multiline = (start[0] != end[0])
         if last_token_multiline:
