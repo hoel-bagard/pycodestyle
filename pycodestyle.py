@@ -617,7 +617,7 @@ def continued_indentation(
         print(">>> " + tokens[0][4].rstrip())
 
     for token_type, text, start, end, line in tokens:
-        logger.debug(f"{text=}")
+        logger.debug(f"Processing token: {text=}, {start=}")
 
         newline = row < start[0] - first_row
         if newline:
