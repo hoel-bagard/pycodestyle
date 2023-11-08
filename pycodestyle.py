@@ -46,6 +46,7 @@ W warnings
 700 statements
 900 syntax error
 """
+import argparse
 import bisect
 import configparser
 import inspect
@@ -53,10 +54,12 @@ import io
 import keyword
 import logging
 import os
+from pathlib import Path
 import re
 import sys
 import time
 import tokenize
+from typing import Literal
 import warnings
 from fnmatch import fnmatch
 from functools import lru_cache
@@ -606,14 +609,16 @@ def continued_indentation(
     # for each depth, collect a list of opening rows
     open_rows = [[0]]
     # for each depth, memorize the hanging indentation
-    hangs = [None]
+    hangs: list[None | int] = [None]
     # visual indents
-    indent_chances = {}
+    indent_chances: dict[int, type | str | bool] = {}
     last_indent = tokens[0][2]
-    visual_indent = None
+    visual_indent: type | str | bool | None = None
     last_token_multiline = False
     # for each depth, memorize the visual indent column
     indent = [last_indent[1]]
+    hang: int = 0
+    hanging_indent: bool = False
     if verbose >= 3:
         print(">>> " + tokens[0][4].rstrip())
 
@@ -678,8 +683,10 @@ def continued_indentation(
             elif visual_indent in (text, str):
                 # ignore token lined up with matching one from a
                 # previous line
+                logger.error(f"{visual_indent=}, {text=}")
                 pass
             else:
+                logger.error(f"{visual_indent=}, {text=}")
                 # indent is broken
                 if hang <= 0:
                     error = "E122", "missing indentation or outdented"
@@ -750,6 +757,7 @@ def continued_indentation(
             if start[1] not in indent_chances:
                 # allow lining up tokens
                 indent_chances[start[1]] = text
+                logger.error(text)
 
         logger.debug(f"{open_rows=}")
 
@@ -757,6 +765,7 @@ def continued_indentation(
         if last_token_multiline:
             rel_indent[end[0] - first_row] = rel_indent[row]
 
+    # logger.debug(f"{text=}, {indent_next=}, {expand_indent(line)=}, {indent_level=}, {indent_size=}, {visual_indent=}")
     if indent_next and expand_indent(line) == indent_level + indent_size:
         pos = (start[0], indent[0] + indent_size)
         if visual_indent:
@@ -2647,7 +2656,17 @@ def _main():
     """Parse options and run checks on Python source."""
     import signal
 
-    create_logger("Pycodestyle Logger", verbose_level="debug")
+    parser = argparse.ArgumentParser(description="Object picking training script",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("file_paths", nargs="+", type=Path, help="Path to python files to process.")
+    parser.add_argument("--verbose_level", "-v", choices=["debug", "info", "error"], default="debug", type=str,
+                        help="Logger level.")
+    args = parser.parse_args()
+
+    file_paths: list[Path] = args.file_paths
+    verbose_level: Literal["debug", "info", "error"] = args.verbose_level
+
+    create_logger("Pycodestyle Logger", verbose_level=verbose_level)
 
     # Handle "Broken pipe" gracefully
     try:
@@ -2658,7 +2677,7 @@ def _main():
     style_guide = StyleGuide(parse_argv=True)
     options = style_guide.options
 
-    report = style_guide.check_files()
+    report = style_guide.check_files(file_paths)
 
     if options.statistics:
         report.print_statistics()
