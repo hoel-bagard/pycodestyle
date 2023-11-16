@@ -340,10 +340,17 @@ def _is_one_liner(logical_line, indent_level, lines, line_number):
 
 
 @register_check
-def blank_lines(logical_line, blank_lines, indent_level, line_number,
-                blank_before, previous_logical,
-                previous_unindented_logical_line, previous_indent_level,
-                lines):
+def blank_lines(
+    logical_line: str,
+    blank_lines: int,
+    indent_level: int,
+    line_number: int,
+    blank_before: int,
+    previous_logical: str,
+    previous_unindented_logical_line: str,
+    previous_indent_level: int,
+    lines: list[str],
+):
     r"""Separate top-level function and class definitions with two blank
     lines.
 
@@ -372,6 +379,8 @@ def blank_lines(logical_line, blank_lines, indent_level, line_number,
     E305: def a():\n    pass\na()
     E306: def a():\n    def b():\n        pass\n    def c():\n        pass
     """  # noqa
+    logger = logging.getLogger("Pycodestyle Logger")
+    logger.debug(f"{line_number=}, {logical_line=}, {blank_lines=}, {blank_before=}")
     top_level_lines = BLANK_LINES_CONFIG['top_level']
     method_lines = BLANK_LINES_CONFIG['method']
 
