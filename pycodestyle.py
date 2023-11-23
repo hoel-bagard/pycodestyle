@@ -387,7 +387,8 @@ def blank_lines(logical_line, blank_lines, indent_level, line_number,
             return
         if indent_level:
             if not (blank_before == method_lines or
-                    previous_indent_level < indent_level or
+                    (previous_indent_level < indent_level and
+                     not previous_logical.startswith(('async ', 'def '))) or
                     DOCSTRING_REGEX.match(previous_logical)
                     ):
                 ancestor_level = indent_level

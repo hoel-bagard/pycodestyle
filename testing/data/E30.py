@@ -185,7 +185,7 @@ def baz(): pass
 def bar(): pass
 def baz():
     pass
-#: E704:4:5 E306:4:5
+#: E704:4:5 E306:2:5 E306:4:5
 def foo():
     def bar():
         pass
